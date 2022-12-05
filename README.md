@@ -1,7 +1,7 @@
 # vector-clocks
 Sample Go and Rust implementation of Vector Clocks
 
-## Question
+## Input
 
 We are given a set of events per server. For example:
 
