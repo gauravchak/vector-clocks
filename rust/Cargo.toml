@@ -1,5 +1,5 @@
 [package]
-name = "rust"
+name = "vector_clocks"
 version = "0.1.0"
 authors = ["gchak207"]
 edition = "2018"
