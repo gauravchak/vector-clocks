@@ -24,8 +24,10 @@ pub fn get_timestamps(events : &[Vec<(i32, i32)>])->Vec<Vec<i32>> {
 					  next_eidx[sidx] >= s_events.len() {
 						  continue;
 					  }
+
 				  let eidx = next_eidx[sidx];
 				  let evt : (i32, i32) = s_events[eidx];
+
 				  if
 					  evt .0 == 0 {
 						  cur_ts[sidx] = cur_ts[sidx] + 1;
@@ -37,13 +39,26 @@ pub fn get_timestamps(events : &[Vec<(i32, i32)>])->Vec<Vec<i32>> {
 					  evt .0 == 1 {
 						  cur_ts[sidx] = cur_ts[sidx] + 1;
 						  timestamps[sidx].push(cur_ts[sidx]);
-						  send_times.insert(evt .0, cur_ts[sidx]);
+						  send_times.insert(evt .1, cur_ts[sidx]);
 						  next_eidx[sidx] = next_eidx[sidx] + 1;
 						  making_progress = true;
 					  }
 				  else if
-					  evt .0 == 2 {
-						  // check if msgnum received already
+					  evt .0 == 2 { // recv event
+						  if
+							  let Some(ts) = send_times.get(&evt .1) {
+								  if
+									  cur_ts[sidx] < *ts {
+										  cur_ts[sidx] = *ts;
+									  }
+								  cur_ts[sidx] = cur_ts[sidx] + 1;
+								  timestamps[sidx].push(cur_ts[sidx]);
+								  next_eidx[sidx] = next_eidx[sidx] + 1;
+								  making_progress = true;
+							  }
+						  else {
+							  println !("Recv blocked on msg {}", evt .0);
+						  }
 					  }
 			  }
 	  }
