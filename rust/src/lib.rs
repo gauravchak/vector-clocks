@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
 pub fn get_timestamps(events : &[Vec<(i32, i32)>])->Vec<Vec<i32>> {
+	return get_timestamps_optimized(events);
+}
+
+fn get_timestamps_simple(events : &[Vec<(i32, i32)>])->Vec<Vec<i32>> {
 	let mut timestamps : Vec<Vec<i32>> = Vec::new ();
   for
 	  _i in 0..events.len() {
@@ -63,4 +67,86 @@ pub fn get_timestamps(events : &[Vec<(i32, i32)>])->Vec<Vec<i32>> {
 			  }
 	  }
   timestamps
+}
+
+fn get_timestamps_optimized(input : &[Vec<(i32, i32)>])->Vec<Vec<i32>> {
+	let mut timestamps = Vec::new ();
+	for
+		_ in 0..input.len() {
+			timestamps.push(Vec::new ());
+		}
+
+	let mut s_idx_to_proc = Vec::new ();
+	for
+		i in 0..input.len() {
+			s_idx_to_proc.push(i);
+		}
+
+	let mut next_s_idx = vec ![0; input.len()];
+	let mut current_ts = vec ![0; input.len()];
+	let mut send_ts : HashMap<i32, i32> = HashMap::new ();
+	let mut blocked_server : HashMap<i32, usize> = HashMap::new ();
+	let mut s_idx_to_proc_idx = 0;
+
+	while
+		s_idx_to_proc_idx < s_idx_to_proc.len() {
+			let s_idx = s_idx_to_proc[s_idx_to_proc_idx];
+			s_idx_to_proc_idx += 1;
+
+			if
+				next_s_idx[s_idx] >= input[s_idx].len() {
+					continue;
+				}
+
+			let next_evt = input[s_idx][next_s_idx[s_idx]];
+			match next_evt .0 {
+				0 => {
+					current_ts[s_idx] += 1;
+					timestamps[s_idx].push(current_ts[s_idx]);
+					next_s_idx[s_idx] += 1;
+
+					s_idx_to_proc_idx -= 1;
+					s_idx_to_proc[s_idx_to_proc_idx] = s_idx;
+				}
+				1 => {
+					current_ts[s_idx] += 1;
+					timestamps[s_idx].push(current_ts[s_idx]);
+					send_ts.insert(next_evt .1, current_ts[s_idx]);
+					next_s_idx[s_idx] += 1;
+
+					let block_sidx = blocked_server.get(&next_evt .1);
+					if
+						let Some(block_sidx) = block_sidx {
+							s_idx_to_proc_idx -= 1;
+							s_idx_to_proc[s_idx_to_proc_idx] = *block_sidx;
+							s_idx_to_proc.push(s_idx);
+						}
+					else {
+						s_idx_to_proc_idx -= 1;
+						s_idx_to_proc[s_idx_to_proc_idx] = s_idx;
+					}
+				}
+				2 => {
+					let msg_send_ts = send_ts.get(&next_evt .1);
+					if
+						let Some(msg_send_ts) = msg_send_ts {
+							if
+								*msg_send_ts > current_ts[s_idx] {
+									current_ts[s_idx] = *msg_send_ts;
+								}
+							current_ts[s_idx] += 1;
+							timestamps[s_idx].push(current_ts[s_idx]);
+							next_s_idx[s_idx] += 1;
+
+							s_idx_to_proc_idx -= 1;
+							s_idx_to_proc[s_idx_to_proc_idx] = s_idx;
+						}
+					else {
+						blocked_server.insert(next_evt .1, s_idx);
+					}
+				}
+        _ => {}
+			}
+		}
+	timestamps
 }
